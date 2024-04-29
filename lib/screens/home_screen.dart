@@ -13,27 +13,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _textVal = "";
 
-  void _getRandomText(String language) async {
-    print("Fetching text");
-    Uri uri = Uri.http("10.0.2.2:8000", "/api/get_random_text/$language");
+  void _getRandomText(String language, String difficulty) async {
+    Uri uri =
+        Uri.http("10.0.2.2:8000", "/api/get_random_text/$language/$difficulty");
 
     try {
       final res = await http.get(uri);
 
       if (res.statusCode >= 400) {
-        print("ERROR");
-        return;
+        throw "Error fetching text.";
       }
 
       Map<String, dynamic> llmTextItem =
           json.decode(utf8.decode(res.bodyBytes));
-      print(llmTextItem["text"]);
       setState(() {
         _textVal = llmTextItem["text"];
       });
-      print(_textVal);
     } catch (error) {
-      print(error);
+      setState(() {
+        _textVal = error.toString();
+      });
     }
   }
 

@@ -10,15 +10,22 @@ class RequestTextButtons extends StatefulWidget {
     required this.onRequest,
   });
 
-  final void Function(String language) onRequest;
+  final void Function(String language, String difficulty) onRequest;
 
   @override
   State<RequestTextButtons> createState() => _RequestTextButtonsState();
 }
 
 class _RequestTextButtonsState extends State<RequestTextButtons> {
-  final List<String> listItems = <String>[""];
-  String? dropdownValue;
+  final List<String> _languageDropdownItems = <String>[""];
+  final List<String> _difficultyDropdownItems = <String>[
+    "Easy",
+    "Normal",
+    "Difficult"
+  ];
+
+  String? _languageDropdownValue;
+  String? _difficultyDropdownValue;
   bool isFetched = false;
   String? fetchError;
 
@@ -34,12 +41,12 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
       }
 
       final List<dynamic> languages = json.decode(res.body);
-      listItems.clear();
+      _languageDropdownItems.clear();
       for (final lang in languages) {
-        listItems.add(lang["language_name"]);
+        _languageDropdownItems.add(lang["language_name"]);
       }
       setState(() {
-        dropdownValue = listItems[0];
+        _languageDropdownValue = _languageDropdownItems[0];
       });
     } catch (error) {
       print(error);
@@ -60,14 +67,16 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
   void initState() {
     super.initState();
     _fetchLanguages();
-    dropdownValue = listItems[0];
+    _languageDropdownValue = _languageDropdownItems[0];
+    _difficultyDropdownValue =
+        _difficultyDropdownItems[1]; // set difficulty to normal
   }
 
   void _requestText() {
-    if (dropdownValue == "") {
+    if (_languageDropdownValue == "") {
       return;
     }
-    widget.onRequest(dropdownValue!);
+    widget.onRequest(_languageDropdownValue!, _difficultyDropdownValue!);
   }
 
   @override
@@ -76,8 +85,8 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         DropdownButton(
-          value: dropdownValue,
-          items: listItems
+          value: _languageDropdownValue,
+          items: _languageDropdownItems
               .map<DropdownMenuItem<String>>(
                 (item) => DropdownMenuItem(
                   value: item,
@@ -89,9 +98,33 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
               .toList(),
           onChanged: (String? value) {
             setState(() {
-              dropdownValue = value!;
+              _languageDropdownValue = value!;
             });
           },
+        ),
+        const SizedBox(
+          width: 16,
+        ),
+        DropdownButton(
+          value: _difficultyDropdownValue,
+          items: _difficultyDropdownItems
+              .map<DropdownMenuItem<String>>(
+                (item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(
+                    capitalizeString(item),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (String? value) {
+            setState(() {
+              _difficultyDropdownValue = value!;
+            });
+          },
+        ),
+        const SizedBox(
+          width: 16,
         ),
         ElevatedButton(
           onPressed: _requestText,
