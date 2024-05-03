@@ -1,3 +1,4 @@
+import 'package:dopios_mobile/widgets/paragraph.dart';
 import 'package:dopios_mobile/widgets/request_text_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _textVal = "";
+  String _originalText = "";
+  String _englishText = "";
 
   void _getRandomText(String language, String difficulty) async {
     Uri uri =
@@ -26,18 +28,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
       Map<String, dynamic> llmTextItem =
           json.decode(utf8.decode(res.bodyBytes));
+      print(llmTextItem["translation"]);
       setState(() {
-        _textVal = llmTextItem["text"];
+        _originalText = llmTextItem["text"];
+        _englishText = llmTextItem["translation"];
       });
     } catch (error) {
       setState(() {
-        _textVal = error.toString();
+        _originalText = error.toString();
       });
     }
   }
 
+  List<String> _splitOnFullStop(String text) {
+    // split text on full stop. Then add full stop to end of each element in list
+    // if final entry in list != "", then don't add full stop to last entry.
+    var splitText = text.split('.');
+    for (int i = 0; i < splitText.length - 1; i++) {
+      splitText[i] += '.';
+    }
+    return splitText;
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget paragraphText = const Text("");
+
+    if (_originalText != "") {
+      paragraphText = Paragraph(
+          text: _splitOnFullStop(_originalText),
+          englishText: _splitOnFullStop(_englishText));
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -52,9 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
-                _textVal,
-              ),
+              paragraphText,
               RequestTextButtons(
                 onRequest: _getRandomText,
               ),
