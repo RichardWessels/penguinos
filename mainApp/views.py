@@ -25,6 +25,9 @@ def confirm_difficulty(difficulty: str, text: LLMTextWithTranslation):
     
     return difficulty == text_difficulty
 
+@api_view(['GET'])
+def hello_world(request):
+    return Response("Hello world")
 
 @api_view(['GET'])
 def get_all_texts(request):
