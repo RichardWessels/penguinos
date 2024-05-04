@@ -3,6 +3,7 @@ import 'package:dopios_mobile/widgets/request_text_buttons.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,8 +17,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String _englishText = "";
 
   void _getRandomText(String language, String difficulty) async {
-    Uri uri =
-        Uri.http("10.0.2.2:8000", "/api/get_random_text/$language/$difficulty");
+    if (dotenv.env['API_URL'] == null) {
+      setState(() {
+        _originalText = "ERROR GETTING API URL";
+      });
+      return;
+    }
+    Uri uri = Uri.http(
+        dotenv.env['API_URL']!, "/api/get_random_text/$language/$difficulty");
 
     try {
       final res = await http.get(uri);
