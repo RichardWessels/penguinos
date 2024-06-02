@@ -50,3 +50,11 @@ def get_language_list(request):
     languages = Language.objects.all()
     serializer = LanguageSerializer(languages, many=True, context={'request': request})
     return Response(serializer.data)
+
+# @api_view(['GET'])
+# def add_random_data(request):
+#     new_entry = LLMTextWithTranslation(text=f"Random text: {random.randint(0,100)}", translation=f"Random translation: {random.randint(0,100)}", 
+#                                                     language=None, 
+#                                                     original_prompt="Some language prompt")
+#     new_entry.save()
+#     return Response("Data added")
