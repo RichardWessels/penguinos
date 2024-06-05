@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-// final List<String> listItems = <String>["one", "french", "three"];
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RequestTextButtons extends StatefulWidget {
   const RequestTextButtons({
@@ -31,9 +30,12 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
 
   void _fetchLanguages() async {
     print("Fetching languages");
-    Uri uri = Uri.http("10.0.2.2:8000", "/api/get_language_list");
 
     try {
+      if (dotenv.env['API_URL'] == null) {
+        throw "Error with API_URL";
+      }
+      Uri uri = Uri.http(dotenv.env['API_URL']!, "/api/get_language_list");
       final res = await http.get(uri);
 
       if (res.statusCode >= 400) {
