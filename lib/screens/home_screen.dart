@@ -70,20 +70,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Request Stories"),
+        title: const Text("Penguinos"),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 16,
-          horizontal: 16,
+          horizontal: 24,
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              paragraphText,
-              RequestTextButtons(
-                onRequest: _getRandomText,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: paragraphText,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: RequestTextButtons(
+                  onRequest: _getRandomText,
+                ),
               ),
             ],
           ),
