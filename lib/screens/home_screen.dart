@@ -83,9 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Expanded(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: paragraphText,
+                child: SingleChildScrollView(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: paragraphText,
+                  ),
                 ),
               ),
               Padding(
