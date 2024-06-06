@@ -45,7 +45,7 @@ class _ParagraphState extends State<Paragraph> {
               style: translatedIndex != i
                   ? GoogleFonts.notoSans(
                       textStyle:
-                          const TextStyle(fontSize: 17, color: Colors.black87))
+                          const TextStyle(fontSize: 16, color: Colors.black87))
                   : GoogleFonts.roboto(
                       textStyle:
                           const TextStyle(fontSize: 16, color: Colors.red)),
