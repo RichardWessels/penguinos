@@ -2,35 +2,18 @@ import os
 import sys
 import django
 import ollama
-
-if __name__ == '__main__':
-
-    project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-    sys.path.append(project_path)
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dopios_backend.settings')
-    django.setup()
-
-    from mainApp.models import LLMTextWithTranslation, Language
+import datetime
 
 
-    NUMBER_STORIES_TO_GENERATE = 2
-    LANGUAGES = ["german", "french"]
-    DIFFICULTIES = ["A2", "B1", "C1"]
-
-    language_foreign_key_dict = {}
-    for language in LANGUAGES:
-        try:
-            Language.objects.get(language_name=language)
-        except:
-            new_lang = Language(language_name=language)
-            new_lang.save()
-        
-        language_foreign_key_dict[language] = Language.objects.get(language_name=language)
+NUMBER_STORIES_TO_GENERATE = 2
+LANGUAGES = ["german", "french"]
+DIFFICULTIES = ["A2", "B1", "C1"]
 
 
-    # get themes
-    themes = []
-    # prompt = f'Provide me with {NUMBER_STORIES_TO_GENERATE} very simple story themes. Only output the list without any other text. Format the list of themes by having [START] preceeding each list item. Only provide one sentence for each theme, no further text.'
+def get_themes():
+    '''
+    Returns list with each element describing a theme.
+    '''
     prompt = f"Provide me with {NUMBER_STORIES_TO_GENERATE} very simple story themes. Only output the list without any other text. Format the list of themes as follows: [START] item 1 [END], [START] item 2 [END]. Ensure this format is followed. Only provide one sentence for each theme"
 
     response = ollama.chat(model='llama3', messages=[
@@ -48,9 +31,56 @@ if __name__ == '__main__':
     generated_themes_cleaned = generated_themes_cleaned.split("[START]")[1:]
     generated_themes_cleaned = list(map(lambda e: e.split('[END]')[0], generated_themes_cleaned))
 
+    themes = []
+
     for i, theme in enumerate(generated_themes_cleaned):
         print(f"{i}: {theme}")
         themes.append(theme)
+
+    return themes
+
+def generate_story(language_prompt):
+    '''
+    Returns original and english-translated text of a story created by the language_prompt parameter.
+    '''
+    response = ollama.chat(model='llama3', messages=[
+    {
+        'role': 'user',
+        'content': language_prompt,
+    },
+    ])
+    generated_language_output = response['message']['content']
+
+    split_text = generated_language_output.split("[START]")
+
+    original_extracted = split_text[1].split("[END]")[0].strip()
+    translated_extracted = split_text[2].split("[END]")[0].strip()
+
+    return original_extracted, translated_extracted
+
+if __name__ == '__main__':
+
+    print(f"STARTING SCRIPT AT: {datetime.datetime.now()}")
+
+    project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+    sys.path.append(project_path)
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dopios_backend.settings')
+    django.setup()
+
+    from mainApp.models import LLMTextWithTranslation, Language
+
+    language_foreign_key_dict = {}
+    for language in LANGUAGES:
+        try:
+            Language.objects.get(language_name=language)
+        except:
+            new_lang = Language(language_name=language)
+            new_lang.save()
+        
+        language_foreign_key_dict[language] = Language.objects.get(language_name=language)
+
+
+    themes = get_themes(NUMBER_STORIES_TO_GENERATE)
 
     # Ensure themes are created right
     if not input("PROCEED? (y/N): ").lower().startswith('y'):
@@ -63,19 +93,7 @@ if __name__ == '__main__':
                 try:
 
                     language_prompt = f"Write an {difficulty} level text in {language} of around 150 words. Output only the {language} followed by the translation. For both the original and translated story, use the format [START] before the start of the story, and [END] at the end. Write about the following theme: {theme}"
-
-                    response = ollama.chat(model='llama3', messages=[
-                    {
-                        'role': 'user',
-                        'content': language_prompt,
-                    },
-                    ])
-                    generated_language_output = response['message']['content']
-
-                    split_text = generated_language_output.split("[START]")
-
-                    original_extracted = split_text[1].split("[END]")[0].strip()
-                    translated_extracted = split_text[2].split("[END]")[0].strip()
+                    original_extracted, translated_extracted = generate_story(difficulty, language, theme)
 
                     # Verify data by using length
                     if len(original_extracted) < 80 or len(translated_extracted) < 80:
