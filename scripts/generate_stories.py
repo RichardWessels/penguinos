@@ -86,6 +86,8 @@ if __name__ == '__main__':
     if not input("PROCEED? (y/N): ").lower().startswith('y'):
         exit(0)
 
+    number_of_stories_added = 0
+
     for theme in themes:
         for language in LANGUAGES:
             for difficulty in DIFFICULTIES:
@@ -113,9 +115,13 @@ if __name__ == '__main__':
                                                         language=language_foreign_key_dict[language], 
                                                         original_prompt=language_prompt)
                     new_entry.save()
+                    number_of_stories_added += 1
                     
                     print(f"STORY ADDED ({language}, {difficulty})")
 
                 except Exception as e:
                     print("Following error occured:")
                     print(e)
+
+    print(f"NUMBER OF STORIES ADDED: {number_of_stories_added}")
+    print(f"ENDING SCRIPT AT: {datetime.datetime.now()}")
