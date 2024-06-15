@@ -25,7 +25,6 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
 
   String? _languageDropdownValue;
   String? _difficultyDropdownValue;
-  bool isFetched = false;
   String? fetchError;
 
   void _fetchLanguages() async {
@@ -55,7 +54,9 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
       setState(() {
         fetchError = error.toString();
       });
+      return;
     }
+    fetchError = null;
   }
 
   String capitalizeString(String str) {
@@ -83,7 +84,7 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    Widget body = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         DropdownButton(
@@ -134,5 +135,19 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
         ),
       ],
     );
+
+    if (fetchError != null) {
+      body = Column(
+        children: [
+          const Text("Error connecting to server."),
+          IconButton(
+            onPressed: _fetchLanguages,
+            icon: const Icon(Icons.replay_outlined),
+          ),
+        ],
+      );
+    }
+
+    return body;
   }
 }
