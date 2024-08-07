@@ -2,10 +2,10 @@ import os
 import sys
 import django
 import ollama
-import datetime
+import time
 
 
-NUMBER_STORIES_TO_GENERATE = 2
+NUMBER_STORIES_TO_GENERATE = 5
 LANGUAGES = ["german", "french"]
 DIFFICULTIES = ["A2", "B1", "C1"]
 
@@ -15,6 +15,8 @@ def get_themes():
     Returns list with each element describing a theme.
     '''
     prompt = f"Provide me with {NUMBER_STORIES_TO_GENERATE} very simple story themes. Only output the list without any other text. Format the list of themes as follows: [START] item 1 [END], [START] item 2 [END]. Ensure this format is followed. Only provide one sentence for each theme"
+
+    print(prompt)
 
     response = ollama.chat(model='llama3', messages=[
     {
@@ -34,7 +36,7 @@ def get_themes():
     themes = []
 
     for i, theme in enumerate(generated_themes_cleaned):
-        print(f"{i}: {theme}")
+        print(f"{i+1}: {theme}")
         themes.append(theme)
 
     return themes
@@ -60,7 +62,7 @@ def generate_story(language_prompt):
 
 if __name__ == '__main__':
 
-    print(f"STARTING SCRIPT AT: {datetime.datetime.now()}")
+    START_TIME = time.time()
 
     project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
     sys.path.append(project_path)
@@ -80,13 +82,16 @@ if __name__ == '__main__':
         language_foreign_key_dict[language] = Language.objects.get(language_name=language)
 
 
-    themes = get_themes(NUMBER_STORIES_TO_GENERATE)
+    themes = get_themes()
 
     # Ensure themes are created right
     if not input("PROCEED? (y/N): ").lower().startswith('y'):
         exit(0)
 
     number_of_stories_added = 0
+    story_count_dict = {lang: {diff: 0 for diff in DIFFICULTIES} for lang in LANGUAGES}  # useful to show where the stories were added
+    iteration_number = 0
+    NUM_ITERATIONS = len(themes)*len(LANGUAGES)*len(DIFFICULTIES)
 
     for theme in themes:
         for language in LANGUAGES:
@@ -94,8 +99,10 @@ if __name__ == '__main__':
 
                 try:
 
+                    iteration_number += 1
+                    print(f"Iteration {iteration_number}/{NUM_ITERATIONS}")
                     language_prompt = f"Write an {difficulty} level text in {language} of around 150 words. Output only the {language} followed by the translation. For both the original and translated story, use the format [START] before the start of the story, and [END] at the end. Write about the following theme: {theme}"
-                    original_extracted, translated_extracted = generate_story(difficulty, language, theme)
+                    original_extracted, translated_extracted = generate_story(language_prompt)
 
                     # Verify data by using length
                     if len(original_extracted) < 80 or len(translated_extracted) < 80:
@@ -115,6 +122,8 @@ if __name__ == '__main__':
                                                         language=language_foreign_key_dict[language], 
                                                         original_prompt=language_prompt)
                     new_entry.save()
+
+                    story_count_dict[language][difficulty] += 1
                     number_of_stories_added += 1
                     
                     print(f"STORY ADDED ({language}, {difficulty})")
@@ -124,4 +133,5 @@ if __name__ == '__main__':
                     print(e)
 
     print(f"NUMBER OF STORIES ADDED: {number_of_stories_added}")
-    print(f"ENDING SCRIPT AT: {datetime.datetime.now()}")
+    print(story_count_dict)
+    print(f"TIME TAKEN: {int(time.time()-START_TIME)} seconds")
