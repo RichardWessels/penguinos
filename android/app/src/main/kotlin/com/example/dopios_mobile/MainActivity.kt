@@ -1,4 +1,4 @@
-package com.example.dopios_mobile
+package com.autitiquepenguin.penguinos
 
 import io.flutter.embedding.android.FlutterActivity
 
