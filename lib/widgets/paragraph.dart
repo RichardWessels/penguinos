@@ -46,7 +46,7 @@ class _ParagraphState extends State<Paragraph> {
                   ? GoogleFonts.notoSans(
                       textStyle:
                           const TextStyle(fontSize: 16, color: Colors.black87))
-                  : GoogleFonts.roboto(
+                  : GoogleFonts.notoSans(
                       textStyle:
                           const TextStyle(fontSize: 16, color: Colors.red)),
               recognizer: TapGestureRecognizer()
