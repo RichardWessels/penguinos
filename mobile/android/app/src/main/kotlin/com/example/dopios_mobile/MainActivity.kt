@@ -1,0 +1,5 @@
+package com.autitiquepenguin.penguinos
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity: FlutterActivity()
