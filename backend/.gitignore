@@ -4,3 +4,5 @@ __pycache__
 db.json
 *.sqlite3
 
+.ruff_cache
+.venv
