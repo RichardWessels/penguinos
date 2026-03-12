@@ -55,34 +55,8 @@ def get_text_of_language(request, language, difficulty):
     return Response(serializer.data)
 
 
-# @api_view(['GET'])
-# def get_text_of_language(request, language, difficulty):
-
-#     foreign_text = '''Ceci est un exemple de nouvelle utilisée à des fins d’illustration. Pour voir la traduction anglaise, cliquez simplement sur la phrase. Une fois cela fait, la phrase sera écrite en rouge.'''
-#     english_text = '''This is an example short story used for illustration. To view the English translation, simply click the sentence. Once this is done, the sentence will be written in red font.'''
-
-#     # foreign_text = '''Um eine Geschichte zum Lesen auszuwählen, wählen Sie aus den unten stehenden Optionen die Sprache und den Schwierigkeitsgrad aus. Wenn Sie beispielsweise „Schwierig“ und „Deutsch“ auswählen, wird eine knifflige deutsche Kurzgeschichte angezeigt. Dies entspricht ungefähr einem Text auf C1-Niveau, der Schwierigkeitsgrad kann jedoch variieren. Sobald die Optionen ausgewählt sind, drücken Sie einfach auf „Anfordern“ und eine Kurzgeschichte wird abgerufen.'''
-#     # english_text = '''To select a story to read, choose the language and difficulty from the options below. For example, selecting "Difficult" and "German" will show a tricky German short story. This roughly corresponds to a C1 level text, however, the difficulty may vary. Once the options are selected, simply press "Request" and a short story will be fetched.'''
-
-#     test_entry = LLMTextWithTranslation(text=foreign_text, translation=english_text,
-#                                                     language=None,
-#                                                     original_prompt="")
-
-#     serializer = LLMTextWithTranslationSerializer(test_entry, many=False, context={'request': request})
-#     return Response(serializer.data)
-
-
 @api_view(["GET"])
 def get_language_list(request):
     languages = Language.objects.all()
     serializer = LanguageSerializer(languages, many=True, context={"request": request})
     return Response(serializer.data)
-
-
-# @api_view(['GET'])
-# def add_random_data(request):
-#     new_entry = LLMTextWithTranslation(text=f"Random text: {random.randint(0,100)}", translation=f"Random translation: {random.randint(0,100)}",
-#                                                     language=None,
-#                                                     original_prompt="Some language prompt")
-#     new_entry.save()
-#     return Response("Data added")
