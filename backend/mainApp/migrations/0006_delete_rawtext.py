@@ -4,13 +4,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('mainApp', '0005_llmtextwithtranslation'),
+        ("mainApp", "0005_llmtextwithtranslation"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='RawText',
+            name="RawText",
         ),
     ]

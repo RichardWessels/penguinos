@@ -5,27 +5,38 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('mainApp', '0001_initial'),
+        ("mainApp", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Language',
+            name="Language",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('language_name', models.CharField(max_length=30, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("language_name", models.CharField(max_length=30, unique=True)),
             ],
         ),
         migrations.RenameField(
-            model_name='rawtext',
-            old_name='language',
-            new_name='language_char',
+            model_name="rawtext",
+            old_name="language",
+            new_name="language_char",
         ),
         migrations.AddField(
-            model_name='rawtext',
-            name='language_fk',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='mainApp.language'),
+            model_name="rawtext",
+            name="language_fk",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="mainApp.language",
+            ),
         ),
     ]

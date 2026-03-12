@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('mainApp', '0003_rename_language_fk_rawtext_language_and_more'),
+        ("mainApp", "0003_rename_language_fk_rawtext_language_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='rawtext',
-            name='language_char',
+            model_name="rawtext",
+            name="language_char",
         ),
     ]

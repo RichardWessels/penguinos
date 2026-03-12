@@ -1,0 +1,20 @@
+[project]
+name = "Penguinos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pylint>=4.0.5",
+    "pylint-django>=2.7.0",
+    "ruff>=0.15.5",
+]
+
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
+
+[tool.pylint.django]
+django-settings-module = "dopios_backend.settings"
