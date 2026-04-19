@@ -1,24 +1,39 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# Set the working directory in the container
+RUN groupadd --system --gid 999 nonroot \
+ && useradd --system --gid 999 --uid 999 --create-home nonroot
+
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
-COPY requirements.txt /app/
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_NO_DEV=1
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
 
-# Install any dependencies specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Put the virtual environment outside /app
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy the rest of the application code into the container at /app
-COPY . /app/
+# Install dependencies first for caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Copy source code
+COPY . /app
 
-# Expose port 8000 for the application
+# Install the project itself
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
+# Ensure app files are owned by the runtime user
+RUN chown -R nonroot:nonroot /app /opt/venv
+
+ENTRYPOINT []
+
+USER nonroot
+
 EXPOSE 8000
 
-# Run the application
-# CMD ["gunicorn", "--bind", "0.0.0.0:8000", "dopios_backend.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "dopios_backend.wsgi:application"]
