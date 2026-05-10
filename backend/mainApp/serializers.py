@@ -1,16 +1,14 @@
-from mainApp.models import LLMTextWithTranslation, Language
+from mainApp.models import Language, StoryTranslation
 from rest_framework import serializers
 
 
-class LLMTextWithTranslationSerializer(serializers.HyperlinkedModelSerializer):
-    language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
-
-    class Meta:
-        model = LLMTextWithTranslation
-        fields = ["text", "translation", "language", "original_prompt", "timestamp"]
-
-
-class LanguageSerializer(serializers.HyperlinkedModelSerializer):
+class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
-        fields = ["language_name"]
+        fields = ["language_code", "language_name"]
+
+
+class StoryTranslationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoryTranslation
+        fields = ["title", "content", "story", "language", "difficulty"]

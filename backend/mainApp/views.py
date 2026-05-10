@@ -1,62 +1,44 @@
+from django.db.models import QuerySet
+from rest_framework import viewsets, status
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.pagination import LimitOffsetPagination
 
-from mainApp.models import LLMTextWithTranslation, Language
-from mainApp.serializers import LLMTextWithTranslationSerializer, LanguageSerializer
-
-import random
+from django_filters.rest_framework import DjangoFilterBackend
 
 
-def confirm_difficulty(difficulty: str, text: LLMTextWithTranslation):
-    """
-    Checks difficulty by looking at prompt text. Used with `filter` to allow only texts of desired difficulty.
-    """
-    text_difficulty = "Normal"
-    text_prompt: str = text.original_prompt.lower()
-
-    if "a2" in text_prompt:
-        text_difficulty = "Easy"
-
-    if "b1" in text_prompt:
-        text_difficulty = "Normal"
-
-    if "c1" in text_prompt:
-        text_difficulty = "Difficult"
-
-    return difficulty == text_difficulty
+from mainApp.models import Language, StoryTranslation
+from mainApp.serializers import LanguageSerializer, StoryTranslationSerializer
 
 
 @api_view(["GET"])
-def hello_world(request):
-    return Response("Hello world")
+def health_check(request):
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-def get_all_texts(request):
-    all_texts = LLMTextWithTranslation.objects.all()
-    serializer = LLMTextWithTranslationSerializer(
-        all_texts, many=True, context={"request": request}
-    )
-    return Response(serializer.data)
+class LanguageListView(ListAPIView):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializer
 
 
-@api_view(["GET"])
-def get_text_of_language(request, language, difficulty):
-    language_fk = Language.objects.get(language_name=language)
-    language_texts = list(LLMTextWithTranslation.objects.filter(language=language_fk))
-    # filter to only allow texts of specified difficulty
-    language_texts = list(
-        filter(lambda text: confirm_difficulty(difficulty, text), language_texts)
-    )
-    item = random.choice(language_texts)
-    serializer = LLMTextWithTranslationSerializer(
-        item, many=False, context={"request": request}
-    )
-    return Response(serializer.data)
+class StoryTranslationPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
 
 
-@api_view(["GET"])
-def get_language_list(request):
-    languages = Language.objects.all()
-    serializer = LanguageSerializer(languages, many=True, context={"request": request})
-    return Response(serializer.data)
+class StoryTranslationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = StoryTranslationSerializer
+    lookup_field = "public_id"
+
+    queryset: QuerySet[StoryTranslation] = StoryTranslation.objects.select_related(
+        "language", "difficulty", "story"
+    ).order_by("public_id")
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = {
+        "language__language_code": ["exact"],
+        "difficulty__difficulty": ["exact"],
+    }
+
+    pagination_class = StoryTranslationPagination
