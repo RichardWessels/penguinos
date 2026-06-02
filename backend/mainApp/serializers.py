@@ -13,7 +13,14 @@ class DifficultySerializer(serializers.ModelSerializer):
         model = Difficulty
         fields = ["public_id", "difficulty"]
 
-class StoryTranslationSerializer(serializers.ModelSerializer):
+
+class StoryTranslationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoryTranslation
         fields = ["public_id", "title", "content", "story", "language", "difficulty"]
+
+
+class StoryTranslationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoryTranslation
+        fields = ["public_id", "title", "story", "language", "difficulty"]
