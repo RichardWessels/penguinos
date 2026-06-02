@@ -11,4 +11,5 @@ urlpatterns = [
     path("health", views.health_check, name="health"),
     path("", include(router.urls)),
     path("languages/", views.LanguageListView.as_view()),
+    path("difficulties/", views.DifficultyListView.as_view()),
 ]

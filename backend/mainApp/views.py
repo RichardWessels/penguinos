@@ -8,8 +8,8 @@ from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-from mainApp.models import Language, StoryTranslation
-from mainApp.serializers import LanguageSerializer, StoryTranslationSerializer
+from mainApp.models import Language, Difficulty, StoryTranslation
+from mainApp.serializers import LanguageSerializer, DifficultySerializer, StoryTranslationSerializer
 
 
 @api_view(["GET"])
@@ -21,6 +21,9 @@ class LanguageListView(ListAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
 
+class DifficultyListView(ListAPIView):
+    queryset = Difficulty.objects.all()
+    serializer_class = DifficultySerializer
 
 class StoryTranslationPagination(LimitOffsetPagination):
     default_limit = 10
@@ -33,7 +36,7 @@ class StoryTranslationViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset: QuerySet[StoryTranslation] = StoryTranslation.objects.select_related(
         "language", "difficulty", "story"
-    ).order_by("public_id")
+    ).order_by("public_id")  # TODO: order by date added
 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = {
