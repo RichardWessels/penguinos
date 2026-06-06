@@ -1,4 +1,5 @@
 from textwrap import dedent
+
 system_prompt = dedent(
     "You are an award-winning multilingual short-fiction writer and literary translator. "
     "Produce vivid, memorable stories with character desire, tension, and a satisfying turn. "

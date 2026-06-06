@@ -6,58 +6,111 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Difficulty',
+            name="Difficulty",
             fields=[
-                ('public_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('difficulty', models.CharField(max_length=16, unique=True)),
+                (
+                    "public_id",
+                    models.UUIDField(
+                        default=uuid.uuid4, primary_key=True, serialize=False
+                    ),
+                ),
+                ("difficulty", models.CharField(max_length=16, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Language',
+            name="Language",
             fields=[
-                ('public_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('language_name', models.CharField(max_length=32, unique=True)),
-                ('language_code', models.CharField(max_length=8, unique=True)),
+                (
+                    "public_id",
+                    models.UUIDField(
+                        default=uuid.uuid4, primary_key=True, serialize=False
+                    ),
+                ),
+                ("language_name", models.CharField(max_length=32, unique=True)),
+                ("language_code", models.CharField(max_length=8, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Prompt',
+            name="Prompt",
             fields=[
-                ('public_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('prompt_text', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "public_id",
+                    models.UUIDField(
+                        default=uuid.uuid4, primary_key=True, serialize=False
+                    ),
+                ),
+                ("prompt_text", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Story',
+            name="Story",
             fields=[
-                ('public_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=128)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "public_id",
+                    models.UUIDField(
+                        default=uuid.uuid4, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=128)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='StoryTranslation',
+            name="StoryTranslation",
             fields=[
-                ('public_id', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=128)),
-                ('content', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('difficulty', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mainApp.difficulty')),
-                ('language', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mainApp.language')),
-                ('prompt', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='mainApp.prompt')),
-                ('story', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mainApp.story')),
+                (
+                    "public_id",
+                    models.UUIDField(
+                        default=uuid.uuid4, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=128)),
+                ("content", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "difficulty",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="mainApp.difficulty",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="mainApp.language",
+                    ),
+                ),
+                (
+                    "prompt",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="mainApp.prompt",
+                    ),
+                ),
+                (
+                    "story",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="mainApp.story"
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('story', 'language', 'difficulty'), name='unique_story_language_difficulty')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("story", "language", "difficulty"),
+                        name="unique_story_language_difficulty",
+                    )
+                ],
             },
         ),
     ]
