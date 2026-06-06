@@ -1,4 +1,4 @@
-from mainApp.models import Language, Difficulty, StoryTranslation
+from mainApp.models import Language, Difficulty, Story, StoryTranslation
 from rest_framework import serializers
 
 
@@ -14,13 +14,28 @@ class DifficultySerializer(serializers.ModelSerializer):
         fields = ["public_id", "difficulty"]
 
 
-class StoryTranslationDetailSerializer(serializers.ModelSerializer):
+class StorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = StoryTranslation
-        fields = ["public_id", "title", "content", "story", "language", "difficulty"]
+        model = Story
+        fields = ["public_id", "title"]
 
 
 class StoryTranslationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoryTranslation
         fields = ["public_id", "title", "story", "language", "difficulty"]
+
+
+class StoryTranslationDetailSerializer(serializers.ModelSerializer):
+    language = LanguageSerializer(read_only=True)
+    difficulty = DifficultySerializer(read_only=True)
+
+    class Meta:
+        model = StoryTranslation
+        fields = ["public_id", "title", "content", "story", "language", "difficulty"]
+
+
+class ParallelStorySerializer(serializers.Serializer):
+    story = StorySerializer()
+    original_story = StoryTranslationDetailSerializer()
+    translated_story = StoryTranslationDetailSerializer()
