@@ -1,0 +1,426 @@
+openapi: 3.0.3
+info:
+  title: ''
+  version: 0.0.0
+paths:
+  /api/difficulties/:
+    get:
+      operationId: difficulties_list
+      description: Returns the available difficulty levels for stories.
+      summary: List story difficulties
+      tags:
+      - Reference data
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Difficulty'
+          description: ''
+  /api/health:
+    get:
+      operationId: health_retrieve
+      description: Returns a simple status payload when the API is reachable.
+      summary: Check API health
+      tags:
+      - System
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+          description: ''
+  /api/languages/:
+    get:
+      operationId: languages_list
+      description: Returns the languages that can be used when filtering or displaying
+        stories.
+      summary: List supported languages
+      tags:
+      - Reference data
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Language'
+          description: ''
+  /api/parallel-story/:
+    get:
+      operationId: parallel_story_retrieve
+      description: Returns a selected translated story alongside the matching English
+        story for the same story and difficulty.
+      summary: Get a translated story with its English original
+      parameters:
+      - in: query
+        name: translated-story-public-id
+        schema:
+          type: string
+          format: uuid
+        description: Public ID of the translated story to pair with the English original.
+        required: true
+      tags:
+      - Stories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParallelStory'
+          description: ''
+        '400':
+          description: Missing required `translated-story-public-id` query parameter.
+        '404':
+          description: Translated story or matching English original was not found.
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - ht
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/stories/:
+    get:
+      operationId: stories_list
+      description: Returns paginated story translations. Use the language and difficulty
+        query parameters to narrow the list for the mobile app.
+      summary: List story translations
+      parameters:
+      - in: query
+        name: difficulty
+        schema:
+          type: string
+        description: Difficulty name to filter by, for example `A2` or `B1`.
+      - in: query
+        name: language
+        schema:
+          type: string
+        description: Language code to filter by, for example `en`, `fr` or `de`.
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - Stories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStoryTranslationListList'
+          description: ''
+components:
+  schemas:
+    Difficulty:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        difficulty:
+          type: string
+          maxLength: 16
+      required:
+      - difficulty
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Always returns "ok".
+      required:
+      - status
+    Language:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        language_name:
+          type: string
+          maxLength: 32
+        language_code:
+          type: string
+          maxLength: 8
+      required:
+      - language_code
+      - language_name
+    PaginatedStoryTranslationListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoryTranslationList'
+    ParallelStory:
+      type: object
+      properties:
+        story:
+          $ref: '#/components/schemas/Story'
+        original_story:
+          $ref: '#/components/schemas/StoryTranslationDetail'
+        translated_story:
+          $ref: '#/components/schemas/StoryTranslationDetail'
+      required:
+      - original_story
+      - story
+      - translated_story
+    Story:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 128
+      required:
+      - title
+    StoryTranslationDetail:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 128
+        content:
+          type: string
+        story:
+          type: string
+          format: uuid
+        language:
+          allOf:
+          - $ref: '#/components/schemas/Language'
+          readOnly: true
+        difficulty:
+          allOf:
+          - $ref: '#/components/schemas/Difficulty'
+          readOnly: true
+      required:
+      - content
+      - difficulty
+      - language
+      - story
+      - title
+    StoryTranslationList:
+      type: object
+      properties:
+        public_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 128
+        story:
+          type: string
+          format: uuid
+        language:
+          type: string
+          format: uuid
+        difficulty:
+          type: string
+          format: uuid
+      required:
+      - difficulty
+      - language
+      - story
+      - title
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
