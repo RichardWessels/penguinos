@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
 
 class Paragraph extends StatefulWidget {
   const Paragraph({super.key, required this.text, required this.englishText});
@@ -13,20 +12,12 @@ class Paragraph extends StatefulWidget {
 }
 
 class _ParagraphState extends State<Paragraph> {
-  int translatedIndex =
-      -1; // if a text is clicked and english translation shown, this shows which index to translate
+  int translatedIndex = -1;
 
   void _onSentenceTap(int index) {
-    // print("Clicked on sentence: $index");
-    if (translatedIndex == index) {
-      setState(() {
-        translatedIndex = -1;
-      });
-    } else {
-      setState(() {
-        translatedIndex = index;
-      });
-    }
+    setState(() {
+      translatedIndex = translatedIndex == index ? -1 : index;
+    });
   }
 
   @override
@@ -39,20 +30,12 @@ class _ParagraphState extends State<Paragraph> {
             TextSpan(
               text:
                   translatedIndex != i ? widget.text[i] : widget.englishText[i],
-              // style: translatedIndex != i
-              //     ? const TextStyle(color: Colors.black)
-              //     : const TextStyle(color: Colors.red),
-              style: translatedIndex != i
-                  ? GoogleFonts.notoSans(
-                      textStyle:
-                          const TextStyle(fontSize: 16, color: Colors.black87))
-                  : GoogleFonts.notoSans(
-                      textStyle:
-                          const TextStyle(fontSize: 16, color: Colors.red)),
+              style: TextStyle(
+                fontSize: 16,
+                color: translatedIndex != i ? Colors.black87 : Colors.red,
+              ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  _onSentenceTap(i);
-                },
+                ..onTap = () => _onSentenceTap(i),
             ),
         ],
       ),

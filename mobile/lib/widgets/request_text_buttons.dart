@@ -28,8 +28,6 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
   String? fetchError;
 
   void _fetchLanguages() async {
-    print("Fetching languages");
-
     try {
       if (dotenv.env['API_URL'] == null) {
         throw "Error with API_URL";
@@ -50,7 +48,6 @@ class _RequestTextButtonsState extends State<RequestTextButtons> {
         _languageDropdownValue = _languageDropdownItems[0];
       });
     } catch (error) {
-      print(error);
       setState(() {
         fetchError = error.toString();
       });

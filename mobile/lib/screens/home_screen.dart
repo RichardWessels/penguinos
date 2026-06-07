@@ -1,10 +1,12 @@
-import 'package:dopios_mobile/widgets/paragraph.dart';
-import 'package:dopios_mobile/widgets/request_text_buttons.dart';
+import 'package:dopios_mobile/api/api_client.dart';
+import 'package:dopios_mobile/models/difficulty.dart';
+import 'package:dopios_mobile/models/language.dart';
+import 'package:dopios_mobile/models/story_translation.dart';
 import 'package:dopios_mobile/screens/about_screen.dart';
+import 'package:dopios_mobile/screens/reader_screen.dart';
+import 'package:dopios_mobile/widgets/story_library/filter_bar.dart';
+import 'package:dopios_mobile/widgets/story_library/story_list_item.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,66 +16,142 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _originalText = "";
-  String _englishText = "";
+  static const int _pageSize = 20;
 
-  void _getRandomText(String language, String difficulty) async {
-    if (dotenv.env['API_URL'] == null) {
-      setState(() {
-        _originalText = "ERROR GETTING API URL";
-      });
-      return;
-    }
-    Uri uri = Uri.http(
-        dotenv.env['API_URL']!, "/api/get_random_text/$language/$difficulty");
+  final ApiClient _apiClient = ApiClient();
+  final ScrollController _scrollController = ScrollController();
+
+  List<Language> _languages = [];
+  List<Difficulty> _difficulties = [];
+  List<StoryTranslationListItem> _stories = [];
+
+  Language? _selectedLanguage;
+  Difficulty? _selectedDifficulty;
+  bool _isLoadingReferenceData = true;
+  bool _isLoadingStories = false;
+  bool _hasMoreStories = true;
+  int _storyCount = 0;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_loadMoreNearBottom);
+    _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_loadMoreNearBottom)
+      ..dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoadingReferenceData = true;
+      _error = null;
+    });
 
     try {
-      final res = await http.get(uri);
+      final languages = await _apiClient.fetchLanguages();
+      final difficulties = await _apiClient.fetchDifficulties();
 
-      if (res.statusCode >= 400) {
-        throw "Error fetching text.";
-      }
-
-      Map<String, dynamic> llmTextItem =
-          json.decode(utf8.decode(res.bodyBytes));
-      print(llmTextItem["translation"]);
       setState(() {
-        _originalText = llmTextItem["text"];
-        _englishText = llmTextItem["translation"];
+        _languages = languages;
+        _difficulties = difficulties;
+        _isLoadingReferenceData = false;
       });
+
+      await _refreshStories();
     } catch (error) {
       setState(() {
-        _originalText = error.toString();
+        _isLoadingReferenceData = false;
+        _error = error.toString();
       });
     }
   }
 
-  List<String> _splitOnFullStop(String text) {
-    // split text on full stop. Then add full stop to end of each element in list
-    // if final entry in list != "", then don't add full stop to last entry.
-    var splitText = text.split('.');
-    for (int i = 0; i < splitText.length - 1; i++) {
-      splitText[i] += '.';
+  Future<void> _refreshStories() async {
+    setState(() {
+      _stories = [];
+      _storyCount = 0;
+      _hasMoreStories = true;
+      _error = null;
+    });
+
+    await _loadStories(reset: true);
+  }
+
+  Future<void> _loadStories({bool reset = false}) async {
+    if (_isLoadingStories || (!_hasMoreStories && !reset)) {
+      return;
     }
-    return splitText;
+
+    setState(() {
+      _isLoadingStories = true;
+      _error = null;
+    });
+
+    try {
+      final page = await _apiClient.fetchStories(
+        languageCode: _selectedLanguage?.code,
+        difficultyName: _selectedDifficulty?.name,
+        limit: _pageSize,
+        offset: reset ? 0 : _stories.length,
+      );
+
+      setState(() {
+        _storyCount = page.count;
+        _stories = reset ? page.results : [..._stories, ...page.results];
+        _hasMoreStories = page.next != null;
+        _isLoadingStories = false;
+      });
+    } catch (error) {
+      setState(() {
+        _isLoadingStories = false;
+        _error = error.toString();
+      });
+    }
+  }
+
+  void _loadMoreNearBottom() {
+    final position = _scrollController.position;
+    if (position.extentAfter < 320) {
+      _loadStories();
+    }
+  }
+
+  void _openStory(StoryTranslationListItem story) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReaderScreen(
+          apiClient: _apiClient,
+          translatedStoryPublicId: story.publicId,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget paragraphText = const Text("");
-
-    if (_originalText != "") {
-      paragraphText = Paragraph(
-          text: _splitOnFullStop(_originalText),
-          englishText: _splitOnFullStop(_englishText));
-    }
+    final languagesById = {
+      for (final language in _languages)
+        if (language.publicId != null) language.publicId!: language,
+    };
+    final difficultiesById = {
+      for (final difficulty in _difficulties)
+        if (difficulty.publicId != null) difficulty.publicId!: difficulty,
+    };
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Penguinos"),
+        title: const Text('Penguinos'),
         actions: [
           IconButton(
+            tooltip: 'About',
             icon: const Icon(Icons.info_outline),
             onPressed: () {
               Navigator.push(
@@ -84,34 +162,168 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 24,
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: paragraphText,
+      body: Column(
+        children: [
+          if (!_isLoadingReferenceData)
+            StoryFilterBar(
+              languages: _languages,
+              difficulties: _difficulties,
+              selectedLanguage: _selectedLanguage,
+              selectedDifficulty: _selectedDifficulty,
+              onLanguageChanged: (language) {
+                setState(() => _selectedLanguage = language);
+                _refreshStories();
+              },
+              onDifficultyChanged: (difficulty) {
+                setState(() => _selectedDifficulty = difficulty);
+                _refreshStories();
+              },
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadInitialData,
+              child: _buildBody(languagesById, difficultiesById),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    Map<String, Language> languagesById,
+    Map<String, Difficulty> difficultiesById,
+  ) {
+    if (_isLoadingReferenceData) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && _stories.isEmpty) {
+      return _StateMessage(
+        icon: Icons.cloud_off_outlined,
+        title: 'Could not load stories',
+        message: _error!,
+        actionLabel: 'Try again',
+        onAction: _loadInitialData,
+      );
+    }
+
+    if (_stories.isEmpty && !_isLoadingStories) {
+      return _StateMessage(
+        icon: Icons.menu_book_outlined,
+        title: 'No stories found',
+        message: 'Try another language or difficulty.',
+        actionLabel: 'Clear filters',
+        onAction: () {
+          setState(() {
+            _selectedLanguage = null;
+            _selectedDifficulty = null;
+          });
+          _refreshStories();
+        },
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(bottom: 20),
+      itemCount: _stories.length + 2,
+      separatorBuilder: (context, index) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              _storyCount == 1 ? '1 story' : '$_storyCount stories',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                ),
+            ),
+          );
+        }
+
+        final storyIndex = index - 1;
+        if (storyIndex >= _stories.length) {
+          if (_isLoadingStories) {
+            return const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (_error != null) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: OutlinedButton.icon(
+                onPressed: _loadStories,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Load more'),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: RequestTextButtons(
-                  onRequest: _getRandomText,
-                ),
+            );
+          }
+
+          return const SizedBox(height: 16);
+        }
+
+        final story = _stories[storyIndex];
+        return StoryListItem(
+          story: story,
+          languagesById: languagesById,
+          difficultiesById: difficultiesById,
+          onTap: () => _openStory(story),
+        );
+      },
+    );
+  }
+}
+
+class _StateMessage extends StatelessWidget {
+  const _StateMessage({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 80),
+        Icon(icon, size: 48, color: colorScheme.primary),
+        const SizedBox(height: 16),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
-            ],
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: FilledButton.icon(
+            onPressed: onAction,
+            icon: const Icon(Icons.refresh),
+            label: Text(actionLabel),
           ),
         ),
-      ),
+      ],
     );
   }
 }
