@@ -64,6 +64,7 @@ prod-migrate:
 
 prod-collectstatic:
 	$(COMPOSE_BASE) exec web python manage.py collectstatic --noinput
+	$(COMPOSE_BASE) restart web
 
 # -------------------------
 # Logs / shell / django
