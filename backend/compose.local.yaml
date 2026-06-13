@@ -18,3 +18,6 @@ services:
       - penguinos_postgres_data:/var/lib/postgresql
     env_file:
       - .env.local
+
+volumes:
+  penguinos_postgres_data:

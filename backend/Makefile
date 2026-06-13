@@ -1,8 +1,8 @@
 .PHONY: lint \
 	local-build local-up local-down local-restart local-rebuild \
-	prod-build prod-up prod-down prod-restart prod-rebuild \
+	prod-build prod-up prod-down prod-restart prod-rebuild prod-release prod-migrate prod-collectstatic \
 	logs logs-web logs-db \
-	shell-web createsuperuser migrate
+	shell-web prod-shell-web createsuperuser migrate collectstatic
 
 PYTHON_DIRS := dopios_backend mainApp scripts
 
@@ -57,6 +57,14 @@ prod-rebuild:
 	$(COMPOSE_BASE) build
 	$(COMPOSE_BASE) up -d
 
+prod-release: prod-migrate prod-collectstatic
+
+prod-migrate:
+	$(COMPOSE_BASE) exec web python manage.py migrate --noinput
+
+prod-collectstatic:
+	$(COMPOSE_BASE) exec web python manage.py collectstatic --noinput
+
 # -------------------------
 # Logs / shell / django
 # Defaulting to local
@@ -74,8 +82,14 @@ logs-db:
 shell-web:
 	$(COMPOSE_LOCAL) exec web bash
 
+prod-shell-web:
+	$(COMPOSE_BASE) exec web bash
+
 createsuperuser:
 	$(COMPOSE_LOCAL) exec web python manage.py createsuperuser --noinput
 
 migrate:
-	$(COMPOSE_LOCAL) exec web python manage.py migrate
+	$(COMPOSE_LOCAL) exec web python manage.py migrate --noinput
+
+collectstatic:
+	$(COMPOSE_LOCAL) exec web python manage.py collectstatic --noinput
