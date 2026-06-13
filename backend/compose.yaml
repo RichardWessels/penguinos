@@ -2,14 +2,14 @@ services:
   web:
     build: .
     command: gunicorn dopios_backend.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/app
     ports:
       - "8000:8000"
     env_file:
       - .env.production
     depends_on:
       - db
+    volumes:
+      - penguinos_static:/app/staticfiles
 
   db:
     image: postgres:18
@@ -20,3 +20,4 @@ services:
 
 volumes:
   penguinos_postgres_data:
+  penguinos_static:
