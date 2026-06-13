@@ -1,6 +1,12 @@
 db.sqlite3
-.env
 __pycache__
 db.json
 *.sqlite3
 
+.ruff_cache
+.venv
+setup_env.sh
+
+.env*
+!.env.production.example
+!.env.local.example

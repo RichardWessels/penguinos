@@ -1,76 +1,181 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from rest_framework import serializers, status
+from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import NotFound, ValidationError
 
-from mainApp.models import LLMTextWithTranslation, Language
-from mainApp.serializers import LLMTextWithTranslationSerializer, LanguageSerializer
-
-import random
+from django_filters.rest_framework import DjangoFilterBackend
 
 
-def confirm_difficulty(difficulty: str, text: LLMTextWithTranslation):
-    '''
-    Checks difficulty by looking at prompt text. Used with `filter` to allow only texts of desired difficulty.
-    '''
-    text_difficulty = "Normal"
-    text_prompt: str = text.original_prompt.lower()
+from mainApp.models import Language, Difficulty, StoryTranslation
+from mainApp.serializers import (
+    LanguageSerializer,
+    DifficultySerializer,
+    ParallelStorySerializer,
+    StoryTranslationListSerializer,
+)
+from mainApp.filters import StoryTranslationFilter
 
-    if "a2" in text_prompt:
-        text_difficulty = "Easy"
 
-    if "b1" in text_prompt:
-        text_difficulty = "Normal"
+@extend_schema(
+    summary="Check API health",
+    description="Returns a simple status payload when the API is reachable.",
+    tags=["System"],
+    responses={
+        200: inline_serializer(
+            name="HealthCheckResponse",
+            fields={"status": serializers.CharField(help_text='Always returns "ok".')},
+        )
+    },
+)
+@api_view(["GET"])
+def health_check(request):
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
-    if "c1" in text_prompt:
-        text_difficulty = "Difficult"
-    
-    return difficulty == text_difficulty
 
-@api_view(['GET'])
-def hello_world(request):
-    return Response("Hello world")
+@extend_schema_view(
+    get=extend_schema(
+        summary="List supported languages",
+        description="Returns the languages that can be used when filtering or displaying stories.",
+        tags=["Reference data"],
+        responses=LanguageSerializer(many=True),
+    )
+)
+class LanguageListView(ListAPIView):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializer
 
-@api_view(['GET'])
-def get_all_texts(request):
-    all_texts = LLMTextWithTranslation.objects.all()
-    serializer = LLMTextWithTranslationSerializer(all_texts, many=True, context={'request': request})
-    return Response(serializer.data)
 
-@api_view(['GET'])
-def get_text_of_language(request, language, difficulty):
-    language_fk = Language.objects.get(language_name=language)
-    language_texts = list(LLMTextWithTranslation.objects.filter(language=language_fk))
-    # filter to only allow texts of specified difficulty
-    language_texts = list(filter(lambda text: confirm_difficulty(difficulty, text), language_texts))
-    item = random.choice(language_texts)
-    serializer = LLMTextWithTranslationSerializer(item, many=False, context={'request': request})
-    return Response(serializer.data)
+@extend_schema_view(
+    get=extend_schema(
+        summary="List story difficulties",
+        description="Returns the available difficulty levels for stories.",
+        tags=["Reference data"],
+        responses=DifficultySerializer(many=True),
+    )
+)
+class DifficultyListView(ListAPIView):
+    queryset = Difficulty.objects.all()
+    serializer_class = DifficultySerializer
 
-# @api_view(['GET'])
-# def get_text_of_language(request, language, difficulty):
 
-#     foreign_text = '''Ceci est un exemple de nouvelle utilisée à des fins d’illustration. Pour voir la traduction anglaise, cliquez simplement sur la phrase. Une fois cela fait, la phrase sera écrite en rouge.'''
-#     english_text = '''This is an example short story used for illustration. To view the English translation, simply click the sentence. Once this is done, the sentence will be written in red font.'''
+class StoryTranslationPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
 
-#     # foreign_text = '''Um eine Geschichte zum Lesen auszuwählen, wählen Sie aus den unten stehenden Optionen die Sprache und den Schwierigkeitsgrad aus. Wenn Sie beispielsweise „Schwierig“ und „Deutsch“ auswählen, wird eine knifflige deutsche Kurzgeschichte angezeigt. Dies entspricht ungefähr einem Text auf C1-Niveau, der Schwierigkeitsgrad kann jedoch variieren. Sobald die Optionen ausgewählt sind, drücken Sie einfach auf „Anfordern“ und eine Kurzgeschichte wird abgerufen.'''
-#     # english_text = '''To select a story to read, choose the language and difficulty from the options below. For example, selecting "Difficult" and "German" will show a tricky German short story. This roughly corresponds to a C1 level text, however, the difficulty may vary. Once the options are selected, simply press "Request" and a short story will be fetched.'''
 
-#     test_entry = LLMTextWithTranslation(text=foreign_text, translation=english_text, 
-#                                                     language=None, 
-#                                                     original_prompt="")
+@extend_schema_view(
+    get=extend_schema(
+        summary="List story translations",
+        description=(
+            "Returns paginated story translations. Use the language and difficulty "
+            "query parameters to narrow the list for the mobile app."
+        ),
+        tags=["Stories"],
+        parameters=[
+            OpenApiParameter(
+                name="language",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Language code to filter by, for example `en`, `fr` or `de`.",
+            ),
+            OpenApiParameter(
+                name="difficulty",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Difficulty name to filter by, for example `A2` or `B1`.",
+            ),
+        ],
+        responses=StoryTranslationListSerializer(many=True),
+    )
+)
+class StoryTranslationListView(ListAPIView[StoryTranslation]):
+    serializer_class = StoryTranslationListSerializer
+    pagination_class = StoryTranslationPagination
+    queryset = StoryTranslation.objects.all()
 
-#     serializer = LLMTextWithTranslationSerializer(test_entry, many=False, context={'request': request})
-#     return Response(serializer.data)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = StoryTranslationFilter
 
-@api_view(['GET'])
-def get_language_list(request):
-    languages = Language.objects.all()
-    serializer = LanguageSerializer(languages, many=True, context={'request': request})
-    return Response(serializer.data)
 
-# @api_view(['GET'])
-# def add_random_data(request):
-#     new_entry = LLMTextWithTranslation(text=f"Random text: {random.randint(0,100)}", translation=f"Random translation: {random.randint(0,100)}", 
-#                                                     language=None, 
-#                                                     original_prompt="Some language prompt")
-#     new_entry.save()
-#     return Response("Data added")
+class ParallelStoryView(APIView):
+    @extend_schema(
+        summary="Get a translated story with its English original",
+        description=(
+            "Returns a selected translated story alongside the matching English story "
+            "for the same story and difficulty."
+        ),
+        tags=["Stories"],
+        parameters=[
+            OpenApiParameter(
+                name="translated-story-public-id",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description="Public ID of the translated story to pair with the English original.",
+            )
+        ],
+        responses={
+            200: ParallelStorySerializer,
+            400: OpenApiResponse(
+                description="Missing required `translated-story-public-id` query parameter."
+            ),
+            404: OpenApiResponse(
+                description="Translated story or matching English original was not found."
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                "Parallel story request",
+                value="/api/parallel-story/?translated-story-public-id=7f7bc5e8-9879-40fa-bb6f-8911dc6cde59",
+                request_only=True,
+            )
+        ],
+    )
+    def get(self, request):
+        translated_story_public_id = request.query_params.get(
+            "translated-story-public-id"
+        )
+        if not translated_story_public_id:
+            raise ValidationError(
+                {"translated-story-public-id": ("This query parameter is required.")}
+            )
+
+        translations = StoryTranslation.objects.select_related(
+            "story", "language", "difficulty"
+        )
+        translated_story = translations.filter(
+            public_id=translated_story_public_id
+        ).first()
+        if translated_story is None:
+            raise NotFound("Translated story not found.")
+
+        original_story = translations.filter(
+            story=translated_story.story,
+            difficulty=translated_story.difficulty,
+            language__language_code="en",
+        ).first()
+        if original_story is None:
+            raise NotFound("Original English story not found.")
+
+        serializer = ParallelStorySerializer(
+            {
+                "story": translated_story.story,
+                "original_story": original_story,
+                "translated_story": translated_story,
+            }
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 
 from django.core.asgi import get_asgi_application
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dopios_backend.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dopios_backend.settings")
 
 application = get_asgi_application()
