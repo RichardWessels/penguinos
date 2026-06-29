@@ -5,28 +5,45 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("About"),
+        title: const Text('About'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Penguinos", style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 10),
-            Text(
-              "Penguinos helps you replace doomscrolling with language learning.\n\n"
-              "If you have feedback, please send it to autitiquepenguin@gmail.com :)",
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const Spacer(),
-            const Center(
-              child: Text("© AutitiquePenguin"),
-            ),
-          ],
-        ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            'Penguinos',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            // 'Read short parallel stories with quick sentence-level translations.',
+            'Read short stories with sentence-level translations :)',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 28),
+          const ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.mail_outline),
+            title: Text('Feedback'),
+            subtitle: Text('autitiquepenguin@gmail.com'),
+          ),
+          const SizedBox(height: 48),
+          Text(
+            '© AutitiquePenguin',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
       ),
     );
   }
