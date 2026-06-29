@@ -29,6 +29,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Ensure app files are owned by the runtime user
 RUN chown -R nonroot:nonroot /app /opt/venv
+RUN mkdir -p /app/staticfiles \
+   && chown -R nonroot:nonroot /app /opt/venv
 
 ENTRYPOINT []
 
