@@ -94,3 +94,16 @@ migrate:
 
 collectstatic:
 	$(COMPOSE_LOCAL) exec web python manage.py collectstatic --noinput
+
+dumpdata:
+	$(COMPOSE_LOCAL) exec web python manage.py dumpdata \
+		--exclude auth.permission \
+		--exclude contenttypes \
+		--exclude sessions \
+		--exclude admin.logentry \
+		--indent 2 \
+		> db.json
+
+loaddata:
+	$(COMPOSE_BASE) cp db.json web:/app/db.json
+	$(COMPOSE_BASE) exec web python manage.py loaddata /app/db.json
