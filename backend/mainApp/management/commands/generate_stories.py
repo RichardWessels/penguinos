@@ -1,4 +1,3 @@
-import random
 import os
 
 from django.core.management.base import BaseCommand, CommandError
@@ -14,7 +13,7 @@ from mainApp.story_generation import (
     build_story_generation_options,
     generate_validated_bundle,
     get_or_create_difficulties,
-    get_or_create_languages
+    get_or_create_languages,
 )
 from mainApp.prompts.story_generation_prompts import system_prompt, user_prompt
 
@@ -36,18 +35,6 @@ LANGUAGE_NAME_MAP = {
     "da": "Danish",
 }
 
-CREATIVE_SEEDS = [
-    "a city where all clocks are 7 minutes early",
-    "a tiny museum of objects found in library books",
-    "a train stop that appears only in rain",
-    "a baker who receives anonymous map fragments",
-    "a lighthouse keeper who is afraid of the ocean",
-    "a school project that accidentally predicts tomorrow",
-    "a rooftop garden shared by strangers",
-    "a violin case delivered to the wrong apartment",
-    "a market where nobody is allowed to bargain",
-    "a message hidden in old weather reports",
-]
 
 class Command(BaseCommand):
     help = (
@@ -123,10 +110,10 @@ class Command(BaseCommand):
         )
         chain = generation_prompt | llm.with_structured_output(StoryGenerationResponse)
 
-        language_map = get_or_create_languages(generation_options.languages, LANGUAGE_NAME_MAP)
-        difficulty_map = get_or_create_difficulties(
-            generation_options.difficulties
+        language_map = get_or_create_languages(
+            generation_options.languages, LANGUAGE_NAME_MAP
         )
+        difficulty_map = get_or_create_difficulties(generation_options.difficulties)
 
         total_attempts = (
             len(generation_options.difficulties)
@@ -146,9 +133,8 @@ class Command(BaseCommand):
         for difficulty in generation_options.difficulties:
             for _ in range(generation_options.stories_per_difficulty):
                 completed += 1
-                seed = random.choice(CREATIVE_SEEDS)
                 self.stdout.write(
-                    f"[{completed}/{total_attempts}] Difficulty={difficulty} Seed={seed}"
+                    f"[{completed}/{total_attempts}] Difficulty={difficulty}"
                 )
 
                 try:
@@ -156,14 +142,13 @@ class Command(BaseCommand):
                         chain,
                         difficulty=difficulty,
                         language_codes=generation_options.languages,
-                        seed=seed,
                         retries=generation_options.max_retries,
                     )
                 except StoryValidationError as exc:
                     self.stdout.write(
                         self.style.WARNING(
                             "Skipping story due to repeated validation failure: "
-                            f"difficulty={difficulty}, seed={seed}, error={exc}"
+                            f"difficulty={difficulty}, error={exc}"
                         )
                     )
                     continue
@@ -172,8 +157,10 @@ class Command(BaseCommand):
                 generated_prompt_text = (
                     f"difficulty={difficulty}; languages={','.join(generation_options.languages)}; "
                     f"seed={data.creative_seed}; sentence_count={validated.sentence_count}; "
-                    f"theme={seed}"
+                    "seed_source=model_generated"
                 )
+
+                self.stdout.write(f"Generated premise: {data.creative_seed}")
 
                 if generation_options.dry_run:
                     self.stdout.write(

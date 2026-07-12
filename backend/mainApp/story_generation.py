@@ -26,7 +26,10 @@ class StoryLanguageBundle(BaseModel):
 
 
 class StoryGenerationResponse(BaseModel):
-    creative_seed: str = Field(description="A short phrase that inspired the story")
+    creative_seed: str = Field(
+        min_length=1,
+        description="A short, original phrase independently chosen to inspire the story",
+    )
     translations: list[StoryLanguageBundle] = Field(
         description="Translations for each requested language, including English."
     )
@@ -281,7 +284,6 @@ def generate_validated_bundle(
     *,
     difficulty: str,
     language_codes: list[str],
-    seed: str,
     retries: int,
 ):
     """Generate a story bundle with retry logic and strict validation.
@@ -290,7 +292,6 @@ def generate_validated_bundle(
         chain: LangChain runnable that returns ``StoryGenerationResponse``.
         difficulty: Requested CEFR difficulty level.
         language_codes: Language codes to include in output.
-        seed: Creative seed phrase to guide generation.
         retries: Maximum generation attempts before failing.
 
     Returns:
@@ -306,7 +307,6 @@ def generate_validated_bundle(
                 {
                     "difficulty": difficulty,
                     "language_codes_csv": ", ".join(language_codes),
-                    "creative_seed": seed,
                     "max_words": 299,
                 }
             )
