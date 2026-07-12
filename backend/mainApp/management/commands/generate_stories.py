@@ -173,7 +173,9 @@ class Command(BaseCommand):
 
                 with transaction.atomic():
                     story = Story.objects.create(title=english_bundle.title)
-                    prompt = Prompt.objects.create(prompt_text=generated_prompt_text)
+                    prompt, _ = Prompt.objects.get_or_create(
+                        prompt_text=generated_prompt_text
+                    )
 
                     for code in generation_options.languages:
                         translation_bundle = validated.by_language[code]
