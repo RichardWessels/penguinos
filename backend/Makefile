@@ -97,13 +97,21 @@ collectstatic:
 
 dumpdata:
 	$(COMPOSE_LOCAL) exec web python manage.py dumpdata \
-		--exclude auth.permission \
-		--exclude contenttypes \
-		--exclude sessions \
-		--exclude admin.logentry \
+		mainApp.Language \
+		mainApp.Difficulty \
+		mainApp.Prompt \
+		--natural-primary \
+		--indent 2 \
+		> db_lookups.json
+	$(COMPOSE_LOCAL) exec web python manage.py dumpdata \
+		mainApp.Story \
+		mainApp.StoryTranslation \
+		--natural-foreign \
 		--indent 2 \
 		> db.json
 
 loaddata:
+	$(COMPOSE_BASE) cp db_lookups.json web:/app/db_lookups.json
 	$(COMPOSE_BASE) cp db.json web:/app/db.json
+	$(COMPOSE_BASE) exec web python manage.py loaddata /app/db_lookups.json
 	$(COMPOSE_BASE) exec web python manage.py loaddata /app/db.json
